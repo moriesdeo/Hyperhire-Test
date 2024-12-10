@@ -7,46 +7,38 @@
 
 import SwiftUI
 
-struct CustomTabView<Content: View>: View {
+struct CustomTabView: View {
     @State private var selectedTab: String
     private let tabs: [String]
-    private let content: (String) -> Content
     private let onTabClick: (Int, String) -> Void
 
     init(
         tabs: [String],
         initialTab: String,
-        onTabClick: @escaping (Int, String) -> Void,
-        @ViewBuilder content: @escaping (String) -> Content
+        onTabClick: @escaping (Int, String) -> Void
     ) {
         self.tabs = tabs
         self._selectedTab = State(initialValue: initialTab)
-        self.content = content
         self.onTabClick = onTabClick
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 16) {
-                    ForEach(Array(tabs.enumerated()), id: \.offset) { index, tab in
-                        TabButton(title: tab, isSelected: selectedTab == tab) {
-                            selectedTab = tab
-                            onTabClick(index, tab)
-                        }
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 16) {
+                ForEach(Array(tabs.enumerated()), id: \.offset) { index, tab in
+                    TabButton(title: tab, isSelected: selectedTab == tab) {
+                        selectedTab = tab
+                        onTabClick(index, tab)
                     }
                 }
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            
-            Spacer()
-            
-            content(selectedTab)
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(Color.black.edgesIgnoringSafeArea(.all))
     }
 }
+
 
 struct TabButton: View {
     let title: String

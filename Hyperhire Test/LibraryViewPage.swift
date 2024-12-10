@@ -12,6 +12,13 @@ struct YourLibraryView: View {
     @State private var isBottomSheetPresented: Bool = false
     @State private var isBottomSheetInput: Bool = false
     @State private var customTabs: [String] = []
+    @State private var playlists: [Playlist] = [
+        Playlist(title: "My first library", subtitle: "Playlist • 58 songs", images: ["ic_profile"]),
+        Playlist(title: "Chill Vibes", subtitle: "Playlist • 20 songs", images: ["ic_profile"]),
+        Playlist(title: "Workout Mix", subtitle: "Playlist • 35 songs", images: ["ic_profile"])
+    ]
+    @State private var tabs: [String] = ["Playlist"]
+    @State private var isGridView: Bool = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -45,23 +52,80 @@ struct YourLibraryView: View {
             .background(Color.black)
             
             CustomTabView(
-                tabs: customTabs,
+                tabs: tabs,
                 initialTab: selectedTab,
-                onTabClick: { _, label in
-                    selectedTab = label
+                onTabClick: { index, tab in
+                    selectedTab = tab
+                    print("Selected Tab: \(tab) at index \(index)")
                 }
-            ) { _ in
-                EmptyView()
-            }
+            ).background(Color.white)
             
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("This is the \(selectedTab) content")
+            HStack {
+                HStack {
+                    Image("ic_sort")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
+                    Text("Most recent")
+                        .font(.headline)
+                        .fontWeight(.bold)
                         .foregroundColor(.white)
                 }
-                .padding()
+                
+                Spacer()
+                
+                // Button to toggle between grid and list view
+                Button(action: {
+                    withAnimation {
+                        isGridView.toggle()
+                    }
+                }) {
+                    Image(isGridView ? "ic_list" : "ic_grid") // Change image based on view mode
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
+                }
             }
-            .background(Color.black)
+            .padding()
+            
+            if isGridView {
+                let columns = [GridItem(.flexible()), GridItem(.flexible())] // Define grid layout
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 16) {
+                        ForEach(playlists) { playlist in
+                            PlaylistView(
+                                title: playlist.title,
+                                subtitle: playlist.subtitle,
+                                imageNames: playlist.images
+                            )
+                            .onTapGesture {
+                                print("Tapped on playlist: \(playlist.title)")
+                            }
+                            .padding(8)
+                            .background(Color.black)
+                            .cornerRadius(10)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                }
+            } else {
+                List {
+                    ForEach(playlists) { playlist in
+                        PlaylistView(
+                            title: playlist.title,
+                            subtitle: playlist.subtitle,
+                            imageNames: playlist.images
+                        )
+                        .onTapGesture {
+                            print("Tapped on playlist: \(playlist.title)")
+                        }
+                        .listRowBackground(Color.black)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    }
+                }
+                .listStyle(PlainListStyle())
+                .background(Color.black)
+            }
             
             if isBottomSheetPresented {
                 BottomSheetDialogCustom(
@@ -74,9 +138,7 @@ struct YourLibraryView: View {
                             action: {
                                 isBottomSheetInput = true
                             },
-                            onDismiss: {
-                                
-                            }
+                            onDismiss: {}
                         ),
                     ]
                 )
@@ -97,11 +159,28 @@ struct YourLibraryView: View {
                 )
             }
         }
+        .onChange(of: selectedTab) {
+            if !selectedTab.isEmpty && !tabs.contains(selectedTab) {
+                withAnimation {
+                    tabs.append(selectedTab)
+                }
+            }
+        }
         .background(Color.black)
         .safeAreaInset(edge: .top) {
             Color.clear.frame(height: 0)
         }
     }
+}
+
+
+
+// Playlist model for sample data
+struct Playlist: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let images: [String]
 }
 
 struct YourLibraryView_Previews: PreviewProvider {
