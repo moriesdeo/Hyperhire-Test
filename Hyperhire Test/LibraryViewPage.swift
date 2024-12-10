@@ -74,13 +74,12 @@ struct YourLibraryView: View {
                 
                 Spacer()
                 
-                // Button to toggle between grid and list view
                 Button(action: {
                     withAnimation {
                         isGridView.toggle()
                     }
                 }) {
-                    Image(isGridView ? "ic_list" : "ic_grid") // Change image based on view mode
+                    Image(isGridView ? "ic_list" : "ic_grid")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 20, height: 20)
@@ -89,7 +88,7 @@ struct YourLibraryView: View {
             .padding()
             
             if isGridView {
-                let columns = [GridItem(.flexible()), GridItem(.flexible())] // Define grid layout
+                let columns = [GridItem(.flexible()), GridItem(.flexible())]
                 ScrollView {
                     LazyVGrid(columns: columns, spacing: 16) {
                         ForEach(playlists) { playlist in
@@ -101,12 +100,11 @@ struct YourLibraryView: View {
                             .onTapGesture {
                                 print("Tapped on playlist: \(playlist.title)")
                             }
-                            .padding(8)
                             .background(Color.black)
                             .cornerRadius(10)
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 4)
                 }
             } else {
                 List {
