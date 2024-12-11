@@ -28,8 +28,8 @@ struct ContentView: View {
                     Text("Your Library")
                 }
         }
-        .accentColor(.white) // Set icon color
-        .background(Color.black.edgesIgnoringSafeArea(.all)) // Set background color
+        .accentColor(.white)
+        .background(Color.black.edgesIgnoringSafeArea(.all))
     }
 }
 

@@ -6,36 +6,44 @@
 //
 
 import Foundation
+import Combine
 
-struct ITunesTrackStorage {
+class ITunesTrackStorage: ITunesTrackRepository {
     private let userDefaultsKey = "iTunesTracks"
 
-    func save(_ tracks: [ITunesTrackLocal]) {
+    func save(tracks: [ITunesTrackLocal]) {
         let encoder = JSONEncoder()
-        if let encoded = try? encoder.encode(tracks) {
-            UserDefaults.standard.set(encoded, forKey: userDefaultsKey)
+        do {
+            let encodedData = try encoder.encode(tracks)
+            UserDefaults.standard.set(encodedData, forKey: userDefaultsKey)
+        } catch {
+            print("Error encoding tracks: \(error)")
         }
     }
 
     func load() -> [ITunesTrackLocal] {
         guard let savedData = UserDefaults.standard.data(forKey: userDefaultsKey) else { return [] }
         let decoder = JSONDecoder()
-        return (try? decoder.decode([ITunesTrackLocal].self, from: savedData)) ?? []
+        do {
+            return try decoder.decode([ITunesTrackLocal].self, from: savedData)
+        } catch {
+            print("Error decoding tracks: \(error)")
+            return []
+        }
     }
 
-    func saveGroup(_ tracks: [ITunesTrackLocal], group: String) {
+    func saveGroup(tracks: [ITunesTrackLocal], group: String) {
         let allTracks = load()
         let filteredTracks = allTracks.filter { $0.group != group }
         let updatedTracks = filteredTracks + tracks
-        save(updatedTracks)
+        save(tracks: updatedTracks)
     }
 
     func loadGroup(_ group: String) -> [ITunesTrackLocal] {
-        load().filter { $0.group == group }
+        return load().filter { $0.group == group }
     }
 
     func loadAllGroups() -> [String] {
-        let allTracks = load()
-        return Array(Set(allTracks.map { $0.group })).sorted()
+        return Array(Set(load().map { $0.group })).sorted()
     }
 }

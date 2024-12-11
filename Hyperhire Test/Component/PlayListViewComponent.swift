@@ -75,11 +75,82 @@ struct PlaylistView: View {
     }
 }
 
+struct PlaylistViewGrid: View {
+    let title: String
+    let subtitle: String
+    let imageNames: [String]
+    
+    var body: some View {
+        VStack {
+            // Image Section
+            if imageNames.count == 1, let imageName = imageNames.first {
+                Image(imageName)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 100, height: 100)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            } else {
+                // Grid of images
+                VStack(spacing: 2) {
+                    HStack(spacing: 2) {
+                        if imageNames.indices.contains(0) {
+                            Image(imageNames[0])
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 50, height: 50)
+                                .clipped()
+                        }
+                        if imageNames.indices.contains(1) {
+                            Image(imageNames[1])
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 50, height: 50)
+                                .clipped()
+                        }
+                    }
+                    HStack(spacing: 2) {
+                        if imageNames.indices.contains(2) {
+                            Image(imageNames[2])
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 50, height: 50)
+                                .clipped()
+                        }
+                        if imageNames.indices.contains(3) {
+                            Image(imageNames[3])
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 50, height: 50)
+                                .clipped()
+                        }
+                    }
+                }
+            }
+            
+            // Text Section
+            VStack(alignment: .center, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundColor(Color.white)
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundColor(Color.white)
+            }
+            .padding(.top, 8)
+        }
+        .padding()
+    }
+}
 
 // Preview
 struct PlaylistView_Previews: PreviewProvider {
     static var previews: some View {
-        PlaylistView(
+        //        PlaylistView(
+        //            title: "My first library",
+        //            subtitle: "Playlist • 58 songs",
+        //            imageNames: ["ic_profile"]
+        //        )
+        PlaylistViewGrid(
             title: "My first library",
             subtitle: "Playlist • 58 songs",
             imageNames: ["ic_profile"]

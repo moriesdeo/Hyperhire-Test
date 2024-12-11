@@ -12,8 +12,19 @@ class ITunesService {
         guard let url = URL(string: "https://itunes.apple.com/search?term=\(term.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&entity=\(entity ?? "")&limit=\(limit)&country=\(country)") else {
             return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
         }
+
         return URLSession.shared.dataTaskPublisher(for: url)
-            .map(\.data)
+            .tryMap { output in
+                guard let response = output.response as? HTTPURLResponse, response.statusCode == 200 else {
+                    throw URLError(.badServerResponse)
+                }
+                return output.data
+            }
+            .handleEvents(receiveOutput: { data in
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("Raw JSON Response: \(jsonString)")
+                }
+            })
             .decode(type: ITunesResponse.self, decoder: JSONDecoder())
             .map { $0.results }
             .eraseToAnyPublisher()

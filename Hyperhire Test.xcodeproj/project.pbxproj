@@ -195,6 +195,9 @@
 			);
 			mainGroup = A57D3EA72D07C8BC0013AB84;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A51F79BF2D09DBD7007B4E05 /* XCRemoteSwiftPackageReference "netfox" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A57D3EB12D07C8BC0013AB84 /* Products */;
 			projectDirPath = "";
@@ -560,6 +563,17 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A51F79BF2D09DBD7007B4E05 /* XCRemoteSwiftPackageReference "netfox" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kasketis/netfox";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.21.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
 	};
 	rootObject = A57D3EA82D07C8BC0013AB84 /* Project object */;
 }
