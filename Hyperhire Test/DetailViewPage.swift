@@ -24,7 +24,7 @@ struct DetailView: View {
             viewModel.loadItems(byGroup: group)
         }
         .sheet(isPresented: $isShowingSearchView) {
-            SearchViewPage()
+            SearchViewPage(group: group)
         }
     }
 
@@ -51,7 +51,7 @@ struct DetailView: View {
 
     private func addButton() -> some View {
         Button(action: {
-            isShowingSearchView = true // Trigger navigation to SearchViewPage
+            isShowingSearchView = true
         }) {
             Image(systemName: "plus")
                 .font(.system(size: 20, weight: .bold))

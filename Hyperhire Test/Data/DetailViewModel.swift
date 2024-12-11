@@ -10,18 +10,18 @@ import Combine
 
 class DetailViewModel: ObservableObject {
     private let storage = ITunesTrackStorage()
-
+    
     @Published var playlists: [ITunesTrackAPI] = []
     @Published var items: [ITunesTrackLocal] = []
     @Published var errorMessage: String? = nil
-
+    
     private let service: ITunesService
     private var cancellables = Set<AnyCancellable>()
-
+    
     init(service: ITunesService = ITunesService()) {
         self.service = service
     }
-
+    
     func searchMusic(term: String) {
         service.searchMusic(term: term)
             .handleEvents(receiveOutput: { [weak self] response in
@@ -37,12 +37,25 @@ class DetailViewModel: ObservableObject {
             })
             .store(in: &cancellables)
     }
-
+    
     func loadItems(byGroup group: String) {
         items = storage.loadGroup(group)
         print("Loaded \(items.count) items for group: \(group)")
     }
-
+    
+    func deleteItems(byGroup group: String) {
+        storage.deleteGroup(group)
+        items.removeAll(where: { $0.group == group })
+        print("Deleted all items for group: \(group)")
+    }
+    
+    func saveTrack(track: ITunesTrackLocal, toGroup group: String) {
+        var updatedTrack = track
+        updatedTrack.group = group
+        storage.saveTrack(track: updatedTrack)
+        print("Track saved to group: \(group)")
+    }
+    
     private func logResponse(_ response: [ITunesTrackAPI]) {
         do {
             let jsonData = try JSONEncoder().encode(response)
@@ -53,7 +66,7 @@ class DetailViewModel: ObservableObject {
             print("Failed to log API response: \(error.localizedDescription)")
         }
     }
-
+    
     private func handleCompletion(_ completion: Subscribers.Completion<Error>) {
         switch completion {
         case .finished:

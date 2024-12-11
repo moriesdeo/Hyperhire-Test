@@ -32,6 +32,17 @@ class ITunesTrackStorage: ITunesTrackRepository {
         }
     }
 
+    func saveTrack(track: ITunesTrackLocal) {
+        var allTracks = load()
+        if let index = allTracks.firstIndex(where: { $0.id == track.id && $0.group == track.group }) {
+            allTracks[index] = track
+        } else {
+            allTracks.append(track)
+        }
+        save(tracks: allTracks)
+        print("Track \(track.trackName) saved to group \(track.group).")
+    }
+
     func saveGroup(tracks: [ITunesTrackLocal], group: String) {
         let allTracks = load()
         let filteredTracks = allTracks.filter { $0.group != group }
@@ -43,7 +54,15 @@ class ITunesTrackStorage: ITunesTrackRepository {
         return load().filter { $0.group == group }
     }
 
+    func deleteGroup(_ group: String) {
+        let allTracks = load()
+        let updatedTracks = allTracks.filter { $0.group != group }
+        save(tracks: updatedTracks)
+        print("All tracks in group \(group) have been deleted.")
+    }
+
     func loadAllGroups() -> [String] {
         return Array(Set(load().map { $0.group })).sorted()
     }
 }
+

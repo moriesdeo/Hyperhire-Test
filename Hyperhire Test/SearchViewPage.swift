@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct SearchViewPage: View {
+    let group: String
     @Environment(\.presentationMode) private var presentationMode
     @StateObject private var viewModel = DetailViewModel()
     @State private var searchText: String = ""
@@ -20,6 +21,9 @@ struct SearchViewPage: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.ignoresSafeArea())
+        .onAppear {
+            print("Group received: \(group)")
+        }
     }
     
     private func searchBar() -> some View {
@@ -64,20 +68,27 @@ struct SearchViewPage: View {
             VStack(spacing: 0) {
                 ForEach(viewModel.items, id: \.id) { track in
                     HStack {
-                        thumbnailView(for: track.artworkUrl100)
+                        thumbnailView(for: track.artworkUrl100 ?? "")
                         trackInfoView(track: track)
                         Spacer()
-                        moreOptionsButton(track: track)
+                        saveButton(for: track)
                     }
                     .padding(.horizontal)
                     .padding(.vertical, 8)
                     .frame(maxWidth: .infinity)
                     .background(Color.black)
-                    .onAppear {
-                        print("Track data: \(track)")
-                    }
                 }
             }
+        }
+    }
+    
+    private func saveButton(for track: ITunesTrackLocal) -> some View {
+        Button(action: {
+            viewModel.saveTrack(track: track, toGroup: group)
+        }) {
+            Image(systemName: "tray.and.arrow.down")
+                .font(.system(size: 20))
+                .foregroundColor(.white)
         }
     }
     
@@ -120,6 +131,6 @@ struct SearchViewPage: View {
 
 struct SearchViewPage_Previews: PreviewProvider {
     static var previews: some View {
-        SearchViewPage()
+        SearchViewPage(group: "test")
     }
 }

@@ -265,7 +265,6 @@ struct Playlist: Identifiable {
     let images: [String]
 }
 
-
 struct YourLibraryView_Previews: PreviewProvider {
     static var previews: some View {
         YourLibraryView()

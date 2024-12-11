@@ -14,7 +14,7 @@ struct ITunesTrackLocal: Identifiable, Codable {
     let trackPrice: Double?
     let currency: String
     let primaryGenreName: String
-    let group: String
+    var group: String
 }
 
 extension ITunesTrackLocal {
