@@ -16,6 +16,7 @@ struct DetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             headerView()
+            groupHeaderView()
             listView()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -59,6 +60,23 @@ struct DetailView: View {
         }
     }
 
+    private func groupHeaderView() -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(group)
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+                .padding(.leading, 16)
+
+            Text("\(viewModel.items.count) songs")
+                .font(.subheadline)
+                .foregroundColor(.gray)
+                .padding(.leading, 16)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.bottom, 16)
+    }
+
     private func listView() -> some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -74,6 +92,10 @@ struct DetailView: View {
                     .frame(maxWidth: .infinity)
                     .background(Color.black)
                 }
+            }
+            .listStyle(PlainListStyle())
+            .refreshable {
+                refreshItems()
             }
         }
     }
@@ -112,6 +134,11 @@ struct DetailView: View {
                 .font(.system(size: 20))
                 .foregroundColor(.white)
         }
+    }
+
+    private func refreshItems() {
+        viewModel.loadItems(byGroup: group)
+        print("Items refreshed for group: \(group)")
     }
 }
 
