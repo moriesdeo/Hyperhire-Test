@@ -9,13 +9,7 @@ import SwiftUI
 
 struct YourLibraryView: View {
     @StateObject private var viewModel = YourLibraryViewModel()
-    @State private var isGridView: Bool = false
-    @State private var isBottomSheetPresented: Bool = false
-    @State private var isBottomSheetInput: Bool = false
-    @State private var bottomSheetItems: [BottomSheetItemData] = []
-    @State private var selectedGroup: String? = nil
-    @State private var isDetailViewPresented: Bool = false
-
+    
     var body: some View {
         ZStack(alignment: .bottom) {
             NavigationView {
@@ -26,41 +20,38 @@ struct YourLibraryView: View {
                 }
                 .background(Color.black.ignoresSafeArea())
                 .onAppear {
-                    viewModel.fetchGroupSummaries()
+                    viewModel.dispatch(.fetchGroupSummaries)
                 }
                 .navigationBarHidden(true)
             }
-
-            if isBottomSheetPresented {
+            
+            if viewModel.state.isBottomSheetPresented {
                 BottomSheetDialogCustom(
-                    isPresented: $isBottomSheetPresented,
-                    items: bottomSheetItems
+                    isPresented: $viewModel.state.isBottomSheetPresented,
+                    items: viewModel.state.bottomSheetItems
                 )
                 .transition(.move(edge: .bottom))
                 .zIndex(1)
             }
-
-            if isBottomSheetInput {
+            
+            if viewModel.state.isBottomSheetInput {
                 BottomSheet(
-                    isPresented: $isBottomSheetInput,
+                    isPresented: $viewModel.state.isBottomSheetInput,
                     title: "Enter Group Name",
                     buttonText: "Submit",
                     onButtonTap: { text in
-                        selectedGroup = text
-                        isBottomSheetInput = false
-                        isDetailViewPresented = true
+                        viewModel.dispatch(.navigateToGroup(group: text))
+                        viewModel.state.isBottomSheetInput = false
                     }
                 )
             }
         }
         .ignoresSafeArea(edges: .bottom)
-        .fullScreenCover(isPresented: $isDetailViewPresented) {
-            if let group = selectedGroup {
-                DetailView(group: group)
-            }
+        .fullScreenCover(isPresented: $viewModel.state.isDetailViewPresented) {
+            DetailView(group: viewModel.state.selectedGroup)
         }
     }
-
+    
     private func headerView() -> some View {
         HStack {
             Image("ic_profile")
@@ -70,14 +61,14 @@ struct YourLibraryView: View {
                 .clipShape(Circle())
                 .overlay(Circle().stroke(Color.white, lineWidth: 2))
                 .padding(.trailing, 8)
-
+            
             Text("Your Library")
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundColor(.white)
-
+            
             Spacer()
-
+            
             Button(action: presentBottomSheet) {
                 Image(systemName: "plus")
                     .font(.system(size: 20, weight: .bold))
@@ -87,22 +78,7 @@ struct YourLibraryView: View {
         .padding()
         .background(Color.black)
     }
-
-    private func presentBottomSheet() {
-        bottomSheetItems = [
-            BottomSheetItemData(
-                icon: Image("ic_playlist"),
-                title: "Add Playlist",
-                description: "Create a new playlist",
-                action: { isBottomSheetInput = true },
-                onDismiss: nil
-            )
-        ]
-        isBottomSheetPresented = true
-    }
-}
-
-extension YourLibraryView {
+    
     private func sortingBar() -> some View {
         HStack {
             HStack {
@@ -116,15 +92,15 @@ extension YourLibraryView {
                     .fontWeight(.bold)
                     .foregroundColor(.white)
             }
-
+            
             Spacer()
-
+            
             Button(action: {
                 withAnimation {
-                    isGridView.toggle()
+                    viewModel.state.isGridView.toggle()
                 }
             }) {
-                Image(systemName: isGridView ? "list.dash" : "square.grid.2x2")
+                Image(systemName: viewModel.state.isGridView ? "list.dash" : "square.grid.2x2")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 20, height: 20)
@@ -133,117 +109,128 @@ extension YourLibraryView {
         }
         .padding()
     }
-
+    
     private func contentView() -> some View {
         Group {
-            if isGridView {
+            if viewModel.state.isGridView {
                 gridView()
             } else {
                 listView()
             }
         }
     }
+    
+    private func presentBottomSheet() {
+        let items = [
+            BottomSheetItemData(
+                icon: Image("ic_playlist"),
+                title: "Add Playlist",
+                description: "Create a new playlist",
+                action: { viewModel.state.isBottomSheetInput = true },
+                onDismiss: nil
+            )
+        ]
+        viewModel.state.bottomSheetItems = items
+        viewModel.state.isBottomSheetPresented = true
+    }
+}
 
+extension YourLibraryView {
     private func gridView() -> some View {
         let columns = [GridItem(.flexible()), GridItem(.flexible())]
         return ScrollView {
             LazyVGrid(columns: columns, spacing: 16) {
-                ForEach(viewModel.groupSummaries) { group in
+                ForEach(viewModel.state.groupSummaries, id: \.groupName) { group in
                     NavigationLink(destination: DetailView(group: group.groupName)) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            imageGrid(for: group.previewImages)
-                                .frame(height: 80)
-                                .background(Color.black)
-                                .cornerRadius(8)
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(group.groupName)
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                Text("Playlist • \(group.itemCount) songs")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
-                            }
-                        }
-                        .padding()
-                        .background(Color.black)
-                        .cornerRadius(10)
+                        GroupCard(group: group)
                     }
                 }
             }
             .padding(.horizontal)
         }
     }
-
+    
     private func listView() -> some View {
-        List(viewModel.groupSummaries) { group in
+        List(viewModel.state.groupSummaries, id: \.groupName) { group in
             NavigationLink(destination: DetailView(group: group.groupName)) {
-                HStack(alignment: .center) {
-                    imageGrid(for: group.previewImages)
-                        .frame(width: 80, height: 80)
-                        .background(Color.black)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(group.groupName)
-                            .font(.headline)
-                            .foregroundColor(.white)
-                        Text("Playlist • \(group.itemCount) songs")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                    }
-                    .padding(.leading, 8)
-
-                    Spacer()
-                }
-                .padding(.vertical, 8)
+                GroupRow(group: group)
             }
             .listRowBackground(Color.black)
         }
         .listStyle(PlainListStyle())
     }
+}
 
-    private func imageGrid(for images: [String]) -> some View {
-        let rows: [[String]] = Array(images.prefix(4)).chunked(into: 2)
-        return VStack(spacing: 2) {
-            ForEach(0..<rows.count, id: \.self) { rowIndex in
-                imageRow(for: rows[rowIndex])
+struct GroupCard: View {
+    let group: GroupSummary
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ImageGrid(images: group.previewImages)
+                .frame(height: 80)
+                .cornerRadius(8)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(group.groupName)
+                    .font(.headline)
+                    .foregroundColor(.white)
+                Text("Playlist • \(group.itemCount) songs")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
             }
-        }
-    }
-
-    private func imageRow(for row: [String]) -> some View {
-        HStack(spacing: 2) {
-            ForEach(row, id: \.self) { imageUrl in
-                imageCell(for: imageUrl)
-            }
-        }
-    }
-
-    private func imageCell(for imageUrl: String) -> some View {
-        AsyncImage(url: URL(string: imageUrl)) { image in
-            image
-                .resizable()
-                .scaledToFill()
-                .frame(width: 40, height: 40)
-                .clipShape(RoundedRectangle(cornerRadius: 5))
-        } placeholder: {
-            Color.gray
-                .frame(width: 40, height: 40)
-                .clipShape(RoundedRectangle(cornerRadius: 5))
-        }
-    }
-
-    private func emptyStateView() -> some View {
-        VStack {
-            Text("No playlists found")
-                .font(.headline)
-                .foregroundColor(.gray)
-            Text("Try searching or adding new tracks.")
-                .font(.subheadline)
-                .foregroundColor(.gray)
         }
         .padding()
-        .multilineTextAlignment(.center)
+        .background(Color.black)
+        .cornerRadius(10)
+    }
+}
+
+struct GroupRow: View {
+    let group: GroupSummary
+    
+    var body: some View {
+        HStack {
+            ImageGrid(images: group.previewImages)
+                .frame(width: 80, height: 80)
+                .cornerRadius(8)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(group.groupName)
+                    .font(.headline)
+                    .foregroundColor(.white)
+                Text("Playlist • \(group.itemCount) songs")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+            }
+            .padding(.leading, 8)
+            
+            Spacer()
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+struct ImageGrid: View {
+    let images: [String]
+    
+    var body: some View {
+        let rows = images.chunked(into: 2)
+        return VStack(spacing: 2) {
+            ForEach(0..<rows.count, id: \.self) { rowIndex in
+                HStack(spacing: 2) {
+                    ForEach(rows[rowIndex], id: \.self) { imageUrl in
+                        AsyncImage(url: URL(string: imageUrl)) { image in
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .clipShape(RoundedRectangle(cornerRadius: 5))
+                        } placeholder: {
+                            Color.gray
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -256,13 +243,6 @@ extension Array {
         }
         return chunks
     }
-}
-
-struct Playlist: Identifiable {
-    let id = UUID()
-    let title: String
-    let subtitle: String
-    let images: [String]
 }
 
 struct YourLibraryView_Previews: PreviewProvider {

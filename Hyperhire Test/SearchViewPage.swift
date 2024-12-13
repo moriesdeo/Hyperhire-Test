@@ -11,11 +11,12 @@ struct SearchViewPage: View {
     let group: String
     @Environment(\.presentationMode) private var presentationMode
     @StateObject private var viewModel = DetailViewModel()
+
     @State private var searchText: String = ""
     @State private var isSearching: Bool = false
     @State private var showToast: Bool = false
     @State private var toastMessage: String = ""
-    
+
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
@@ -25,9 +26,9 @@ struct SearchViewPage: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.black.ignoresSafeArea())
             .onAppear {
-                print("Group received: \(group)")
+                viewModel.dispatch(.loadGroup(group))
             }
-            
+
             if showToast {
                 toastView(message: toastMessage)
                     .transition(.opacity)
@@ -35,7 +36,7 @@ struct SearchViewPage: View {
             }
         }
     }
-    
+
     private func searchBar() -> some View {
         HStack {
             Button(action: {
@@ -46,7 +47,7 @@ struct SearchViewPage: View {
                     .foregroundColor(.white)
                     .padding(.leading, 10)
             }
-            
+
             TextField("Search music...", text: $searchText, onEditingChanged: { isEditing in
                 isSearching = isEditing
             })
@@ -54,7 +55,7 @@ struct SearchViewPage: View {
             .background(Color(.systemGray5))
             .cornerRadius(8)
             .padding(.trailing)
-            
+
             if isSearching {
                 Button(action: {
                     searchText = ""
@@ -67,16 +68,17 @@ struct SearchViewPage: View {
             }
         }
         .onSubmit {
-            viewModel.searchMusic(term: searchText)
+            viewModel.dispatch(.updateSearchText(searchText))
+            viewModel.dispatch(.startSearch)
         }
         .padding(.vertical)
         .background(Color.black)
     }
-    
+
     private func listView() -> some View {
         ScrollView {
             VStack(spacing: 0) {
-                ForEach(viewModel.items, id: \.id) { track in
+                ForEach(viewModel.state.items, id: \.id) { track in
                     HStack {
                         thumbnailView(for: track.artworkUrl100)
                         trackInfoView(track: track)
@@ -91,10 +93,10 @@ struct SearchViewPage: View {
             }
         }
     }
-    
+
     private func saveButton(for track: ITunesTrackLocal) -> some View {
         Button(action: {
-            viewModel.saveTrack(track: track, toGroup: group)
+            viewModel.dispatch(.saveTrack(track, group))
             showToastWithMessage("Track '\(track.trackName)' saved!")
         }) {
             Image(systemName: "tray.and.arrow.down")
@@ -102,7 +104,7 @@ struct SearchViewPage: View {
                 .foregroundColor(.white)
         }
     }
-    
+
     private func thumbnailView(for url: String) -> some View {
         AsyncImage(url: URL(string: url)) { image in
             image
@@ -114,21 +116,21 @@ struct SearchViewPage: View {
             Color.gray.frame(width: 50, height: 50)
         }
     }
-    
+
     private func trackInfoView(track: ITunesTrackLocal) -> some View {
         VStack(alignment: .leading) {
             Text(track.trackName)
                 .font(.headline)
                 .foregroundColor(.white)
                 .lineLimit(1)
-            
+
             Text(track.artistName)
                 .font(.subheadline)
                 .foregroundColor(.gray)
                 .lineLimit(1)
         }
     }
-    
+
     private func moreOptionsButton(track: ITunesTrackLocal) -> some View {
         Button(action: {
             print("More options tapped for \(track.trackName)")
@@ -138,7 +140,7 @@ struct SearchViewPage: View {
                 .foregroundColor(.white)
         }
     }
-    
+
     private func toastView(message: String) -> some View {
         Text(message)
             .font(.system(size: 14))
@@ -150,7 +152,7 @@ struct SearchViewPage: View {
             .frame(maxWidth: .infinity)
             .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height - 100)
     }
-    
+
     private func showToastWithMessage(_ message: String) {
         toastMessage = message
         showToast = true

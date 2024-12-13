@@ -9,14 +9,7 @@ import Foundation
 import Combine
 
 class YourLibraryViewModel: ObservableObject {
-    @Published var playlists: [ITunesTrackAPI] = []
-    @Published var selectedTracks: [ITunesTrackAPI] = []
-    @Published var groups: [String] = []
-    @Published var groupedItems: [ITunesTrackAPI] = []
-    @Published var groupSummaries: [GroupSummary] = []
-    @Published var items: [ITunesTrackLocal] = []
-    @Published var selectedGroup: String? = nil
-
+    @Published var state = LibraryState()
     private var cancellables = Set<AnyCancellable>()
     private let repository: ITunesTrackRepository
     
@@ -24,35 +17,59 @@ class YourLibraryViewModel: ObservableObject {
         self.repository = repository
     }
     
-    func saveSelectedTracks(group: String) {
-        let localTracks = selectedTracks.map { $0.toLocal(group: group) }
-        repository.saveGroup(tracks: localTracks, group: group)
-    }
-    
-    func loadSelectedTracks() {
-        let localTracks = repository.loadGroup("selected")
-        selectedTracks = localTracks.map { $0.toAPI() }
-    }
-    
-    func toggleSelection(for track: ITunesTrackAPI) {
-        if let index = selectedTracks.firstIndex(where: { $0.id == track.id }) {
-            selectedTracks.remove(at: index)
-        } else {
-            selectedTracks.append(track)
+    func dispatch(_ intent: LibraryIntent) {
+        switch intent {
+        case .saveSelectedTracks(let group):
+            saveSelectedTracks(group: group)
+        case .loadSelectedTracks:
+            loadSelectedTracks()
+        case .toggleSelection(let track):
+            toggleSelection(for: track)
+        case .getGroups:
+            getGroups()
+        case .getItems(let group):
+            getItems(byGroup: group)
+        case .loadItems:
+            loadItems()
+        case .fetchGroupSummaries:
+            fetchGroupSummaries()
+        case .navigateToGroup(let group):
+            state.selectedGroup = group
+            state.isDetailViewPresented = true
+            navigateToGroup(group: group)
         }
     }
     
-    func getGroups() -> [String] {
-        return repository.loadAllGroups()
+    private func saveSelectedTracks(group: String) {
+        let localTracks = state.selectedTracks.map { $0.toLocal(group: group) }
+        repository.saveGroup(tracks: localTracks, group: group)
+        state.selectedTracks.removeAll()
     }
     
-    func getItems(byGroup group: String) -> [ITunesTrackAPI] {
+    private func loadSelectedTracks() {
+        let localTracks = repository.loadGroup("selected")
+        state.selectedTracks = localTracks.map { $0.toAPI() }
+    }
+    
+    private func toggleSelection(for track: ITunesTrackAPI) {
+        if let index = state.selectedTracks.firstIndex(where: { $0.id == track.id }) {
+            state.selectedTracks.remove(at: index)
+        } else {
+            state.selectedTracks.append(track)
+        }
+    }
+    
+    private func getGroups() {
+        state.groups = repository.loadAllGroups()
+    }
+    
+    private func getItems(byGroup group: String) {
         let localTracks = repository.loadGroup(group)
-        return localTracks.map { $0.toAPI() }
+        state.groupedItems = localTracks.map { $0.toAPI() }
     }
     
-    func loadItems() {
-        items = [
+    private func loadItems() {
+        state.items = [
             ITunesTrackLocal(
                 id: 1,
                 artistName: "Artist A",
@@ -67,11 +84,11 @@ class YourLibraryViewModel: ObservableObject {
         ]
     }
     
-    func fetchGroupSummaries() {
+    private func fetchGroupSummaries() {
         let localTracks = repository.load()
         let grouped = Dictionary(grouping: localTracks, by: { $0.group })
         
-        groupSummaries = grouped.map { (groupName, items) in
+        state.groupSummaries = grouped.map { (groupName, items) in
             let images = items.prefix(4).compactMap { $0.artworkUrl100 }
             return GroupSummary(
                 groupName: groupName,
@@ -81,7 +98,7 @@ class YourLibraryViewModel: ObservableObject {
         }
     }
     
-    func navigateToGroup(group: String) {
-        selectedGroup = group
+    private func navigateToGroup(group: String) {
+        state.selectedGroup = group
     }
 }
